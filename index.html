@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta name="google-site-verification" content="59-lt8zZUYOM6qVl2YgOfNTazAAh8OQVYp5tF4VXz2w" />
+
+    <script src="config.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SecureVoice — Private Voice Calls</title>
+    <meta name="description" content="Secure, peer-to-peer voice calls. No account needed.">
+    <link rel="stylesheet" href="index.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- Production: set SIGNALING_URL to your Render backend URL -->
+    <script>
+        // Auth guard — redirect to auth if not logged in
+        try {
+            if (!localStorage.getItem('chet_token') && !sessionStorage.getItem('activeCall')) {
+                window.location.replace('join.html');
+            }
+        } catch(e) {}
+    </script>
+</head>
+<body data-state="IDLE">
+    <!-- INSTANT SCREEN GUARD: runs before any external script loads -->
+    <script>
+    (function(){
+        var hasActive = !!sessionStorage.getItem('activeCall');
+        if (hasActive) {
+            // Will be on call screen — hide join screen before paint
+            document.write('<style>#joinScreen{display:none!important}#callScreen{display:block!important}</style>');
+        }
+    })();
+    </script>
+    <div class="app-container">
+        <main class="main-content">
+            <!-- Error Notification -->
+            <div id="errorNotification" class="error-notification hidden" role="alert"></div>
+
+            <!-- Join Screen (hidden when coming from home page or during active call) -->
+            <div id="joinScreen" class="screen">
+                <div class="card">
+                    <div class="card-icon">🔐</div>
+                    <h2>Join a Voice Call</h2>
+                    <p>Enter a shared code to connect securely</p>
+                    <div class="input-group">
+                        <input
+                            type="text"
+                            id="callIdInput"
+                            placeholder="Enter Call Code"
+                            autocomplete="off"
+                            maxlength="64"
+                            aria-label="Call code"
+                        />
+                        <button id="joinBtn" class="btn primary" aria-label="Join call">
+                            Join Call
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Call Screen (Video Mode) -->
+            <div id="callScreen" class="screen">
+
+                <!-- FB-style Calling Overlay (shows while waiting for answer) -->
+                <div id="callingOverlay" style="display:none; position:absolute; inset:0; background:#0a0a14; z-index:50; flex-direction:column; align-items:center; justify-content:center; gap:20px;">
+                    <div id="callingAvatar" style="width:110px; height:110px; border-radius:50%; background:linear-gradient(135deg,#7c6cff,#a855f7); display:flex; align-items:center; justify-content:center; font-size:38px; font-weight:700; animation:callingPulse 1.5s infinite;">?</div>
+                    <div id="callingName" style="font-size:24px; font-weight:700; color:#f0f0ff; font-family:Inter,sans-serif;">Calling...</div>
+                    <div id="callingType" style="font-size:13px; color:rgba(240,240,255,0.5); font-family:Inter,sans-serif; letter-spacing:0.5px;">Connecting...</div>
+                    <div style="display:flex; gap:12px; margin-top:8px;">
+                        <div style="width:8px;height:8px;border-radius:50%;background:#7c6cff;animation:callingDot 1.2s infinite 0s;"></div>
+                        <div style="width:8px;height:8px;border-radius:50%;background:#7c6cff;animation:callingDot 1.2s infinite 0.2s;"></div>
+                        <div style="width:8px;height:8px;border-radius:50%;background:#7c6cff;animation:callingDot 1.2s infinite 0.4s;"></div>
+                    </div>
+                </div>
+                <style>
+                @keyframes callingPulse { 0%,100%{box-shadow:0 0 0 0 rgba(124,108,255,0.5)} 50%{box-shadow:0 0 0 24px rgba(124,108,255,0)} }
+                @keyframes callingDot { 0%,80%,100%{transform:scale(0.6);opacity:0.4} 40%{transform:scale(1);opacity:1} }
+                </style>
+
+                <!-- Incoming Call Overlay -->
+                <div id="incomingCallOverlay" style="display:none; position:absolute; inset:0; background:#0a0a14; z-index:51; flex-direction:column; align-items:center; justify-content:center; gap:20px;">
+                    <div id="incomingAvatar" style="width:110px; height:110px; border-radius:50%; background:linear-gradient(135deg,#7c6cff,#a855f7); display:flex; align-items:center; justify-content:center; font-size:38px; font-weight:700;">?</div>
+                    <div id="incomingName" style="font-size:24px; font-weight:700; color:#f0f0ff; font-family:Inter,sans-serif;">Caller Name</div>
+                    <div id="incomingType" style="font-size:13px; color:rgba(240,240,255,0.5); font-family:Inter,sans-serif; letter-spacing:0.5px;">Incoming Voice Call</div>
+                    
+                    <div style="display:flex; gap:20px; margin-top:20px;">
+                        <button id="incomingDeclineBtn" class="btn control-btn danger" style="border-radius:50%; width:60px; height:60px; padding:0; display:flex; align-items:center; justify-content:center; opacity: 1;">
+                            <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-3.33-2.67m-2.67-3.34a19.79 19.79 0 0 1-3.07-8.63A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91"></path></svg>
+                        </button>
+                        <button id="incomingAcceptBtn" class="btn control-btn" style="border-radius:50%; width:60px; height:60px; padding:0; display:flex; align-items:center; justify-content:center; background:#10b981; color: #fff; opacity: 1;">
+                            <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                        </button>
+                    </div>
+                    <!-- 30 second timer bar -->
+                    <div style="width: 200px; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; margin-top: 20px; overflow: hidden;">
+                        <div id="incomingTimerBar" style="height: 100%; width: 100%; background: #10b981;"></div>
+                    </div>
+                </div>
+
+                <div class="video-container">
+                    <!-- Remote Video (Full Screen) -->
+                    <video id="remoteVideo" autoplay playsinline></video>
+                    
+                    <!-- Remote User Status Overlays -->
+                    <!-- Remote User Status Overlays -->
+                    <div id="remoteVideoStatus" class="remote-video-off hidden">
+                        <div class="avatar-placeholder">
+                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div id="remoteMicStatus" class="remote-mic-off hidden">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="1" y1="1" x2="23" y2="23"></line><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"></path><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
+                    </div>
+                    
+                    <!-- Local Video (PIP Top Right) -->
+                    <div class="local-video-container">
+                        <video id="localVideo" autoplay playsinline muted></video>
+                        <div id="localVideoStatus" class="local-video-off hidden">
+                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                            </svg>
+                        </div>
+                    </div>
+
+                    <!-- Top Overlay Info (Sleek Messenger Style) -->
+                    <div class="video-overlay-top">
+                        <div class="call-stats-bar">
+                            <span id="callTimer" class="timer">00:00</span>
+                            <div class="status-pill">
+                                <span id="statusIndicator" class="status-dot idle" aria-hidden="true"></span>
+                                <span id="status" class="status-text">IDLE</span>
+                            </div>
+                            <div id="qualityIndicator" class="quality-pill hidden">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"></path><path d="M1.42 9a16 16 0 0 1 21.16 0"></path><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path><line x1="12" y1="20" x2="12.01" y2="20"></line></svg>
+                                <span id="qualityText">Good</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bottom Controls -->
+                    <div class="video-controls">
+                        <button id="videoBtn" class="btn control-btn" aria-label="Toggle Video">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 7l-7 5 7 5V7z"></path><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
+                        </button>
+                        
+                        <button id="muteBtn" class="btn control-btn" aria-label="Mute microphone">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
+                        </button>
+
+                        <button id="switchCameraBtn" class="btn control-btn" aria-label="Switch Camera">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"></path><path d="M1 20v-6h6"></path><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                        </button>
+                        
+                        <button id="screenShareBtn" class="btn control-btn" aria-label="Share Screen">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+                        </button>
+                        
+                        <div class="quality-dropdown-container">
+                            <button id="qualityBtn" class="btn control-btn" aria-label="Change Quality">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+                            </button>
+                            <div id="qualityMenu" class="quality-menu hidden">
+                                <label style="display:flex; align-items:center; gap:8px; padding: 8px 16px; font-size: 13px; border-bottom: 1px solid var(--border); margin-bottom: 4px; color: #f59e0b; cursor:pointer;">
+                                    <input type="checkbox" id="qualityLockToggle"> Lock FPS & Res
+                                </label>
+                                <button data-quality="144">144p (Data Saver)</button>
+                                <button data-quality="360">360p (Low)</button>
+                                <button data-quality="480" class="active">480p (Standard)</button>
+                                <button data-quality="720">720p (HD)</button>
+                                <button data-quality="1080">1080p (FHD)</button>
+                                <button data-quality="2160">4K (Ultra HD)</button>
+                            </div>
+                        </div>
+                        
+                        <button id="hangupBtn" class="btn control-btn danger" disabled aria-label="Hang up">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-3.33-2.67m-2.67-3.34a19.79 19.79 0 0 1-3.07-8.63A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91"></path></svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- socket.io: loaded from signaling server, app.js starts only after it's ready -->
+    <script>
+        (function(){
+            var SURL = (window.APP_CONFIG && window.APP_CONFIG.SIGNALING_URL) || window.location.origin;
+            var s = document.createElement('script');
+            s.src = SURL + '/socket.io/socket.io.js';
+            s.onload = function() {
+                var a = document.createElement('script');
+                a.src = 'app.js?v=5';
+                document.body.appendChild(a);
+            };
+            s.onerror = function() {
+                // Fallback: CDN
+                var fb = document.createElement('script');
+                fb.src = 'https://cdn.socket.io/4.8.1/socket.io.min.js';
+                fb.onload = function() {
+                    var a = document.createElement('script');
+                    a.src = 'app.js?v=5';
+                    document.body.appendChild(a);
+                };
+                document.body.appendChild(fb);
+            };
+            document.body.appendChild(s);
+        })();
+    </script>
+</body>
+</html>

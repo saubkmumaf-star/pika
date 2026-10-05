@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta name="google-site-verification" content="59-lt8zZUYOM6qVl2YgOfNTazAAh8OQVYp5tF4VXz2w" />
+
+    <script src="config.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chet — Home</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        // Auth guard
+        try {
+            if (!localStorage.getItem('chet_token')) {
+                window.location.replace('join.html');
+            }
+        } catch(e) { window.location.replace('join.html'); }
+    </script>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --bg:      #090912;
+            --nav:     rgba(10,10,20,0.85);
+            --surface: rgba(255,255,255,0.04);
+            --border:  rgba(255,255,255,0.08);
+            --text:    #f0f0ff;
+            --muted:   rgba(240,240,255,0.45);
+            --accent1: #7c6cff;
+            --accent2: #a855f7;
+            --accent3: #06b6d4;
+            --card-h:  rgba(255,255,255,0.07);
+        }
+        html, body { height: 100%; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Background blobs */
+        body::before, body::after {
+            content: '';
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(100px);
+            opacity: 0.12;
+            pointer-events: none;
+            z-index: 0;
+        }
+        body::before {
+            width: 700px; height: 700px;
+            background: var(--accent1);
+            top: -300px; left: -200px;
+        }
+        body::after {
+            width: 500px; height: 500px;
+            background: var(--accent2);
+            bottom: -200px; right: -100px;
+        }
+
+        /* NAV */
+        nav {
+            position: sticky; top: 0; z-index: 100;
+            background: var(--nav);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+            padding: 0 20px;
+            display: flex;
+            align-items: center;
+            height: 64px;
+            gap: 16px;
+        }
+        .nav-logo {
+            display: flex; align-items: center; gap: 10px;
+            text-decoration: none; color: inherit;
+            flex-shrink: 0;
+        }
+        .nav-logo-icon {
+            width: 36px; height: 36px;
+            background: linear-gradient(135deg, var(--accent1), var(--accent2));
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px;
+        }
+        .nav-logo-text { font-size: 18px; font-weight: 800; }
+        .nav-logo-text span { background: linear-gradient(90deg, var(--accent1), var(--accent3)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+        .nav-search {
+            flex: 1;
+            max-width: 420px;
+            margin: 0 auto;
+            position: relative;
+        }
+        .nav-search input {
+            width: 100%;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 10px 16px 10px 40px;
+            color: var(--text);
+            font-family: inherit;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .nav-search input::placeholder { color: var(--muted); }
+        .nav-search input:focus { border-color: var(--accent1); box-shadow: 0 0 0 3px rgba(124,108,255,0.15); }
+        .nav-search .search-icon {
+            position: absolute; left: 14px; top: 50%;
+            transform: translateY(-50%);
+            color: var(--muted);
+            pointer-events: none;
+        }
+
+        .nav-profile {
+            display: flex; align-items: center; gap: 10px;
+            flex-shrink: 0;
+            cursor: pointer;
+        }
+        .avatar {
+            width: 38px; height: 38px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent1), var(--accent2));
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 14px; color: #fff;
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+        .nav-name { font-weight: 600; font-size: 14px; }
+
+        .logout-btn {
+            border: none;
+            background: rgba(255,94,124,0.12);
+            color: #ff5e7c;
+            border: 1px solid rgba(255,94,124,0.2);
+            padding: 7px 14px;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .logout-btn:hover { background: rgba(255,94,124,0.2); }
+
+        /* MAIN */
+        main {
+            flex: 1;
+            position: relative; z-index: 1;
+            padding: 28px 20px;
+            max-width: 900px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        /* PROFILE CARD */
+        .profile-card {
+            background: var(--surface);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 24px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 28px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.06);
+            animation: slideUp 0.4s cubic-bezier(0.16,1,0.3,1);
+        }
+        @keyframes slideUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+
+        .profile-avatar {
+            width: 72px; height: 72px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent1), var(--accent2));
+            display: flex; align-items: center; justify-content: center;
+            font-size: 28px; font-weight: 800; color: #fff;
+            flex-shrink: 0;
+            box-shadow: 0 8px 24px rgba(124,108,255,0.35);
+            position: relative;
+            cursor: pointer;
+            overflow: hidden;
+            transition: all 0.2s;
+        }
+        .profile-avatar:hover .avatar-overlay { opacity: 1; }
+        .avatar-overlay {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.6);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            opacity: 0; transition: opacity 0.2s;
+            font-size: 10px; font-weight: 600; text-align: center; line-height: 1.2;
+            color: #fff;
+        }
+        .profile-avatar img { width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; }
+        .profile-info { flex: 1; min-width: 0; }
+        .profile-name { font-size: 22px; font-weight: 800; margin-bottom: 4px; }
+        .profile-username { font-size: 14px; color: var(--muted); margin-bottom: 8px; }
+        .uid-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(124,108,255,0.12);
+            border: 1px solid rgba(124,108,255,0.25);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent1);
+            cursor: pointer;
+            transition: all 0.2s;
+            user-select: all;
+        }
+        .uid-badge:hover { background: rgba(124,108,255,0.2); }
+        .uid-badge.copied { color: var(--accent3); border-color: var(--accent3); }
+
+        /* SECTION */
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+        .section-title { font-size: 18px; font-weight: 700; }
+        .section-count {
+            background: rgba(124,108,255,0.15);
+            color: var(--accent1);
+            font-size: 12px;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 20px;
+        }
+
+        /* USER LIST */
+        .user-list { display: flex; flex-direction: column; gap: 10px; }
+        .user-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 16px 18px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            animation: slideUp 0.4s cubic-bezier(0.16,1,0.3,1) both;
+        }
+        .user-card:hover { background: var(--card-h); border-color: rgba(124,108,255,0.25); transform: translateY(-1px); box-shadow: 0 4px 16px rgba(0,0,0,0.3); }
+        .user-card .avatar { flex-shrink: 0; position: relative; }
+        .user-card-info { flex: 1; min-width: 0; }
+        .user-card-name { font-size: 15px; font-weight: 600; margin-bottom: 2px; }
+        .user-card-sub { font-size: 12px; color: var(--muted); }
+        .user-card-uid { font-size: 11px; color: rgba(124,108,255,0.7); font-weight: 600; margin-top: 2px; }
+        .user-card-actions {
+            display: flex;
+            gap: 8px;
+            flex-shrink: 0;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        .user-card:hover .user-card-actions { opacity: 1; }
+
+        /* Verification Badge */
+        .verified-badge {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 16px; height: 16px; margin-left: 4px;
+            cursor: default; position: relative; vertical-align: middle; flex-shrink: 0;
+        }
+        .verified-badge svg { width: 16px; height: 16px; }
+        .verified-badge .badge-tooltip {
+            position: absolute; bottom: calc(100% + 8px); left: 50%;
+            transform: translateX(-50%) scale(0.9);
+            background: rgba(20,20,30,0.97); color: #fff;
+            font-size: 11px; font-weight: 500; white-space: nowrap;
+            padding: 5px 10px; border-radius: 8px;
+            pointer-events: none; opacity: 0;
+            transition: opacity 0.15s, transform 0.15s;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.08);
+            z-index: 99;
+        }
+        .verified-badge:hover .badge-tooltip {
+            opacity: 1; transform: translateX(-50%) scale(1);
+        }
+
+        .action-btn {
+            width: 38px; height: 38px;
+            border: none; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.18s;
+        }
+        .call-btn  { background: rgba(52,211,153,0.12); border: 1px solid rgba(52,211,153,0.25); color: #34d399; }
+        .call-btn:hover  { background: rgba(52,211,153,0.22); transform: scale(1.08); }
+        .msg-btn  { background: rgba(124,108,255,0.12); border: 1px solid rgba(124,108,255,0.25); color: var(--accent1); }
+        .msg-btn:hover  { background: rgba(124,108,255,0.22); transform: scale(1.08); }
+
+        .empty-state {
+            text-align: center;
+            padding: 48px 20px;
+            color: var(--muted);
+        }
+        .empty-state .emoji { font-size: 48px; margin-bottom: 16px; }
+        .empty-state p { font-size: 15px; }
+
+        .loading-state {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 48px;
+            gap: 12px;
+            color: var(--muted);
+        }
+        .spin {
+            width: 20px; height: 20px;
+            border: 2px solid rgba(124,108,255,0.2);
+            border-top-color: var(--accent1);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 28px; left: 50%;
+            transform: translateX(-50%) translateY(80px);
+            background: rgba(30,30,50,0.95);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 12px 24px;
+            border-radius: 24px;
+            font-size: 14px;
+            font-weight: 500;
+            backdrop-filter: blur(16px);
+            transition: transform 0.35s cubic-bezier(0.16,1,0.3,1);
+            z-index: 999;
+            white-space: nowrap;
+        }
+        .toast.show { transform: translateX(-50%) translateY(0); }
+
+        @media (max-width: 600px) {
+            .nav-name { display: none; }
+            .user-card-actions { opacity: 1; }
+            .profile-card { flex-wrap: wrap; }
+            .nav-search { max-width: 100%; }
+        }
+
+        /* ── Incoming Call Overlay ───────────────────────── */
+        .call-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.72);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(10px);
+        }
+        .call-overlay.active { display: flex; }
+        .call-card {
+            background: var(--nav);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 40px 28px 28px;
+            width: 300px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 30px 70px rgba(0,0,0,0.85);
+            animation: callPop 0.35s cubic-bezier(0.34,1.56,0.64,1);
+        }
+        @keyframes callPop {
+            from { transform: scale(0.75) translateY(30px); opacity: 0; }
+            to { transform: scale(1) translateY(0); opacity: 1; }
+        }
+        .call-card-avatar {
+            width: 84px; height: 84px; border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent1), var(--accent2));
+            display: flex; align-items: center; justify-content: center;
+            font-size: 30px; font-weight: 700;
+            animation: callPulse 1.5s infinite;
+        }
+        @keyframes callPulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(124,108,255,0.55); }
+            50% { box-shadow: 0 0 0 20px rgba(124,108,255,0); }
+        }
+        .call-card-name { font-size: 21px; font-weight: 700; margin-top: 6px; text-align: center; }
+        .call-card-type { font-size: 12px; color: var(--muted); letter-spacing: 0.5px; }
+        .call-timer-bar { width: 100%; background: rgba(255,255,255,0.08); border-radius: 99px; height: 3px; overflow: hidden; margin: 8px 0 4px; }
+        .call-timer-fill { height: 100%; background: var(--accent1); width: 100%; border-radius: 99px; transition: width 1s linear; }
+        .call-actions { display: flex; gap: 36px; margin-top: 12px; }
+        .call-action-btn { display: flex; flex-direction: column; align-items: center; gap: 6px; background: none; border: none; cursor: pointer; transition: transform 0.15s; }
+        .call-action-btn:hover { transform: scale(1.08); }
+        .call-action-icon { width: 68px; height: 68px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+        .call-action-btn.reject .call-action-icon { background: #ef4444; }
+        .call-action-btn.accept .call-action-icon { background: #10b981; }
+        .call-action-label { font-size: 12px; font-weight: 600; color: var(--text); }
+    </style>
+</head>
+<body>
+<!-- Incoming Call Overlay (home page) -->
+<div class="call-overlay" id="callOverlay">
+    <div class="call-card">
+        <div class="call-card-avatar" id="incomingCallAvatar">?</div>
+        <div class="call-card-name" id="incomingCallName">Calling...</div>
+        <div class="call-card-type" id="incomingCallType">Incoming Call</div>
+        <div class="call-timer-bar"><div class="call-timer-fill" id="callTimerFill"></div></div>
+        <div class="call-actions">
+            <button class="call-action-btn reject" onclick="homeRejectCall()">
+                <div class="call-action-icon">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-3.33-2.67m-2.67-3.34a19.79 19.79 0 0 1-3.07-8.63A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91"/><line x1="23" y1="1" x2="1" y2="23"/></svg>
+                </div>
+                <span class="call-action-label">Decline</span>
+            </button>
+            <button class="call-action-btn accept" onclick="homeAcceptCall()">
+                <div class="call-action-icon">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                </div>
+                <span class="call-action-label">Accept</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<nav>
+    <a class="nav-logo" href="home.html">
+        <div class="nav-logo-icon">💬</div>
+        <div class="nav-logo-text"><span>Chet</span></div>
+    </a>
+    <div class="nav-search">
+        <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input type="text" id="searchInput" placeholder="Search people by name, username or UID..." autocomplete="off">
+    </div>
+    <div class="nav-profile" onclick="window.location.href='profile.html?uid=' + (me ? me.uid : '')" title="View Profile">
+        <div class="avatar" id="navAvatar">?</div>
+        <span class="nav-name" id="navName">Loading...</span>
+    </div>
+    <button class="logout-btn" onclick="logout()">Sign Out</button>
+</nav>
+
+<main>
+    <!-- Profile Card -->
+    <div class="profile-card" id="profileCard" style="display:none; cursor:pointer" onclick="window.location.href='profile.html?uid=' + (me ? me.uid : '')">
+        <input type="file" id="profilePicInput" accept="image/*" style="display:none" onchange="uploadProfilePic(event)">
+        <div class="profile-avatar" id="profileAvatar" onclick="event.stopPropagation(); document.getElementById('profilePicInput').click()" title="Change profile photo">
+            <span id="profileAvatarText">?</span>
+            <div class="avatar-overlay">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                <span style="margin-top:2px">Upload</span>
+            </div>
+        </div>
+        <div class="profile-info">
+            <div class="profile-name" id="profileName">Loading...</div>
+            <div class="profile-username" id="profileUsername">@username</div>
+            <div class="uid-badge" id="uidBadge" onclick="event.stopPropagation(); copyUID()" title="Click to copy">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span id="uidText">UID...</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Users Section -->
+    <div class="section-header">
+        <div class="section-title">People</div>
+        <div class="section-count" id="userCount">0</div>
+    </div>
+
+    <div class="user-list" id="userList">
+        <div class="loading-state">
+            <div class="spin"></div>
+            <span>Loading people...</span>
+        </div>
+    </div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API  = (window.APP_CONFIG && window.APP_CONFIG.SIGNALING_URL) || window.location.origin;
+const token = localStorage.getItem('chet_token');
+let me      = JSON.parse(localStorage.getItem('chet_user') || '{}');
+
+let searchTimeout = null;
+let allUsers      = [];
+
+function logout() {
+    localStorage.removeItem('chet_token');
+    localStorage.removeItem('chet_user');
+    sessionStorage.removeItem('activeCall');
+    window.location.replace('join.html');
+}
+
+function showToast(msg, duration = 2000) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), duration);
+}
+
+function initials(u) {
+    if (!u) return '?';
+    const parts = [u.first_name || '', u.last_name || ''].filter(Boolean);
+    return parts.map(p => p[0].toUpperCase()).join('') || (u.username || '?')[0].toUpperCase();
+}
+
+function getBadgeHtml() {
+    return `<span class="verified-badge" style="margin-left:4px" title=""><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="12" fill="#1d9bf0"/><path d="M9.5 16.5l-3-3 1.4-1.4 1.6 1.6 5.6-5.6 1.4 1.4z" fill="#fff"/></svg><span class="badge-tooltip">Verified Account</span></span>`;
+}
+
+
+function getColor(uid) {
+    const colors = [
+        ['#7c6cff','#a855f7'], ['#06b6d4','#7c6cff'],
+        ['#f59e0b','#ef4444'], ['#10b981','#06b6d4'],
+        ['#ec4899','#a855f7']
+    ];
+    const i = (uid || '').split('').reduce((a,c) => a + c.charCodeAt(0), 0) % colors.length;
+    return `linear-gradient(135deg, ${colors[i][0]}, ${colors[i][1]})`;
+}
+
+function initProfile() {
+    if (!me.uid) { logout(); return; }
+    const init = initials(me);
+    
+    // Check local storage for avatar
+    const savedAvatar = me.profile_photo;
+    if (savedAvatar) {
+        document.getElementById('navAvatar').innerHTML = `<img src="${savedAvatar}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
+        document.getElementById('profileAvatarText').style.display = 'none';
+        
+        // Remove existing img if any, and add the saved one
+        let existingImg = document.getElementById('profileAvatarImg');
+        if (!existingImg) {
+            existingImg = document.createElement('img');
+            existingImg.id = 'profileAvatarImg';
+            document.getElementById('profileAvatar').appendChild(existingImg);
+        }
+        existingImg.src = savedAvatar;
+    } else {
+        document.getElementById('navAvatar').textContent = init;
+        document.getElementById('profileAvatarText').textContent = init;
+        document.getElementById('profileAvatarText').style.display = 'block';
+        const img = document.getElementById('profileAvatarImg');
+        if (img) img.remove();
+    }
+    
+    const badge = me.is_verified ? getBadgeHtml() : '';
+    document.getElementById('navName').innerHTML = `<span style="display:flex;align-items:center;">${esc(me.first_name || me.username)}${badge}</span>`;
+    document.getElementById('profileAvatar').style.background = getColor(me.uid);
+    document.getElementById('profileName').innerHTML = `<span style="display:flex;align-items:center;justify-content:center;">${esc((me.first_name || '') + ' ' + (me.last_name || ''))}${badge}</span>`;
+    document.getElementById('profileUsername').textContent = '@' + me.username;
+    document.getElementById('uidText').textContent = me.uid;
+    document.getElementById('profileCard').style.display = 'flex';
+}
+
+function copyUID() {
+    navigator.clipboard.writeText(me.uid || '').then(() => {
+        const badge = document.getElementById('uidBadge');
+        badge.classList.add('copied');
+        showToast('UID copied!');
+        setTimeout(() => badge.classList.remove('copied'), 2000);
+    });
+}
+
+function uploadProfilePic(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = function(evt) {
+        const img = new Image();
+        img.onload = function() {
+            const canvas = document.createElement('canvas');
+            const MAX_SIZE = 250;
+            let width = img.width;
+            let height = img.height;
+            
+            if (width > height) {
+                if (width > MAX_SIZE) {
+                    height *= MAX_SIZE / width;
+                    width = MAX_SIZE;
+                }
+            } else {
+                if (height > MAX_SIZE) {
+                    width *= MAX_SIZE / height;
+                    height = MAX_SIZE;
+                }
+            }
+            canvas.width = width;
+            canvas.height = height;
+            
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+            
+            // Compress and get base64
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+            
+            fetch(API + '/api/users/profile-photo', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                body: JSON.stringify({ profile_photo: dataUrl })
+            }).then(r => r.json()).then(res => {
+                if(res.success) {
+                    me.profile_photo = dataUrl;
+                    localStorage.setItem('chet_user', JSON.stringify(me));
+                    initProfile();
+                    showToast('Profile photo updated!');
+                } else {
+                    showToast('Failed to update photo');
+                }
+            }).catch(e => showToast('Error uploading photo'));
+        };
+        img.src = evt.target.result;
+    };
+    reader.readAsDataURL(file);
+}
+
+function getCallId(uidA, uidB) {
+    const sorted = [uidA, uidB].sort();
+    return sorted[0] + '_' + sorted[1];
+}
+
+async function startCall(user) {
+    const token = localStorage.getItem('chet_token');
+    const socket = window._homeSocket;
+
+    if (!socket || !socket.connected) {
+        showToast('Connecting... please try again in a moment.', 3000);
+        return;
+    }
+
+    try {
+        const r = await fetch(`${API}/api/calls/initiate`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+            body: JSON.stringify({ target_uid: user.uid })
+        });
+        if (r.status === 401) { logout(); return; }
+        if (!r.ok) { showToast('Failed to start call. Try again.'); return; }
+        const data = await r.json();
+
+        sessionStorage.setItem('activeCall', JSON.stringify({
+            callId: data.callId,
+            sessionId: data.sessionId,
+            secondsConnected: 0,
+            isMuted: false,
+            isVideoMuted: true,
+            isRemoteScreenSharing: false,
+            isCaller: true
+        }));
+        sessionStorage.setItem('callPartner', JSON.stringify(user));
+        
+        window.location.href = 'index.html';
+    } catch(e) {
+        showToast('Connection error. Check your internet.');
+    }
+}
+
+function startChat(user) {
+    sessionStorage.setItem('chatPartner', JSON.stringify(user));
+    window.location.href = 'chat.html';
+}
+
+
+function renderUsers(users) {
+    const list = document.getElementById('userList');
+    document.getElementById('userCount').textContent = users.length;
+
+    if (!users.length) {
+        list.innerHTML = `
+            <div class="empty-state">
+                <div class="emoji">👥</div>
+                <p>No people found</p>
+            </div>`;
+        return;
+    }
+
+    list.innerHTML = users.map((u, i) => `
+        <div class="user-card" data-uid="${esc(u.uid)}" style="animation-delay:${i * 0.04}s" onclick="sessionStorage.setItem('viewProfileCache', JSON.stringify(${JSON.stringify(u).replace(/"/g, '&quot;')})); window.location.href='profile.html?uid=${esc(u.uid)}'">
+            <div class="avatar" style="background:${getColor(u.uid)}">
+                ${u.profile_photo ? `<img src="${u.profile_photo}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;position:absolute;top:0;left:0;">` : initials(u)}
+                <div style="position:absolute; bottom:0; right:0; width:12px; height:12px; border-radius:50%; border:2px solid var(--surface); background:${u.is_online ? '#10b981' : '#6b7280'}" class="status-dot"></div>
+            </div>
+            <div class="user-card-info">
+                <div class="user-card-name" style="display:flex;align-items:center;gap:2px;">
+                    ${esc(u.first_name)} ${esc(u.last_name)}
+                    ${u.is_verified ? `<span class="verified-badge"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="12" fill="#1d9bf0"/><path d="M9.5 16.5l-3-3 1.4-1.4 1.6 1.6 5.6-5.6 1.4 1.4z" fill="#fff"/></svg><span class="badge-tooltip">Verified Account</span></span>` : ''}
+                </div>
+                ${u.tagline ? `<div style="font-size:12px;color:rgba(255,255,255,0.7);font-weight:500;margin-top:2px;">${esc(u.tagline)}</div>` : ''}
+                <div class="user-card-sub" data-status-uid="${esc(u.uid)}">@${esc(u.username)} &bull; ${u.is_online ? '<span style="color:#10b981">Active now</span>' : esc(formatLastActive(u.last_active))}</div>
+            </div>
+            <div class="user-card-actions">
+                <button class="action-btn call-btn" title="Voice Call" onclick="event.stopPropagation(); startCall(${JSON.stringify(u).replace(/"/g, '&quot;')})">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13.1a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 9.91a16 16 0 0 0 6 6l1.27-.85a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                </button>
+                <button class="action-btn msg-btn" title="Message" onclick="event.stopPropagation(); startChat(${JSON.stringify(u).replace(/"/g, '&quot;')})">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+                </button>
+            </div>
+        </div>
+    `).join('');
+}
+
+function esc(s) {
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function formatLastActive(isoString) {
+    if (!isoString) return 'Active a long time ago';
+    // If SQLite date doesn't have a Z or timezone, make it UTC
+    let safeIso = isoString;
+    if (!safeIso.includes('Z') && !safeIso.includes('+')) {
+        safeIso = safeIso.replace(' ', 'T') + 'Z';
+    }
+    const d = new Date(safeIso);
+    if (isNaN(d.getTime())) return 'Active a long time ago';
+    
+    const diff = Math.floor((new Date() - d) / 1000);
+    if (diff < 60) return `Active ${Math.max(1, diff)}s ago`;
+    const m = Math.floor(diff / 60);
+    if (m < 60) return `Active ${m}m ago`;
+    const h = Math.floor(m / 60);
+    if (h < 24) return `Active ${h}h ago`;
+    const days = Math.floor(h / 24);
+    if (days < 30) return `Active ${days}d ago`;
+    const mo = Math.floor(days / 30);
+    if (mo < 12) return `Active ${mo}mo ago`;
+    return `Active ${Math.floor(mo / 12)}y ago`;
+}
+
+// ── Live status ticker: updates "Active Xs ago" every 30s without re-render ──
+setInterval(() => {
+    document.querySelectorAll('[data-status-uid]').forEach(el => {
+        const uid = el.getAttribute('data-status-uid');
+        const user = allUsers.find(u => u.uid === uid);
+        if (!user || user.is_online) return;
+        const username = esc(user.username);
+        el.innerHTML = `@${username} &bull; ${esc(formatLastActive(user.last_active))}`;
+    });
+}, 30000);
+
+async function loadUsers(q = '') {
+    const list = document.getElementById('userList');
+    if (!allUsers.length || q) {
+        list.innerHTML = `<div class="loading-state"><div class="spin"></div><span>Loading...</span></div>`;
+    }
+    try {
+        const url = `${API}/api/users${q ? '?q=' + encodeURIComponent(q) : ''}`;
+        const r   = await fetch(url, { headers: { Authorization: 'Bearer ' + token } });
+        if (r.status === 401) { logout(); return; }
+        const data = await r.json();
+        if (!q) allUsers = data;
+        renderUsers(data);
+    } catch(e) {
+        list.innerHTML = `<div class="empty-state"><div class="emoji">⚠️</div><p>Failed to load. Please refresh.</p></div>`;
+    }
+}
+
+// Search
+document.getElementById('searchInput').addEventListener('input', (e) => {
+    clearTimeout(searchTimeout);
+    const q = e.target.value.trim();
+    if (!q) { renderUsers(allUsers); return; }
+    searchTimeout = setTimeout(() => loadUsers(q), 300);
+});
+
+// Init
+initProfile();
+fetch(`${API}/api/auth/me`, { headers: { Authorization: 'Bearer ' + token } })
+    .then(r => r.json())
+    .then(data => {
+        if (data && data.uid) {
+            // Merge full API data so cover_photo, bio, tagline etc. persist across login/logout
+            me = { ...me, ...data };
+            localStorage.setItem('chet_user', JSON.stringify(me));
+            initProfile();
+        }
+    }).catch(e => console.error('Failed to sync profile', e));
+
+// ── Load socket IMMEDIATELY on page load (not after users load) ──
+(function initSocketEarly() {
+    var s = document.createElement('script');
+    s.src = API + '/socket.io/socket.io.js';
+    s.onerror = function() {
+        // Fallback to CDN
+        var fb = document.createElement('script');
+        fb.src = 'https://cdn.socket.io/4.8.1/socket.io.min.js';
+        fb.onload = setupSocket;
+        document.head.appendChild(fb);
+    };
+    s.onload = setupSocket;
+    document.head.appendChild(s);
+})();
+
+function setupSocket() {
+    const socket = io(API, {
+        transports: ['websocket', 'polling'],
+        reconnectionDelay: 500,
+        reconnectionAttempts: Infinity,
+        timeout: 10000
+    });
+    window._homeSocket = socket;
+
+    socket.on('connect', () => {
+        socket.emit('register_user', token);
+    });
+    socket.on('user_status', (data) => {
+            const user = allUsers.find(u => u.uid === data.uid);
+            if (user) {
+                user.is_online = data.is_online;
+                user.last_active = data.last_active;
+                
+                // Surgically update the card without full re-render
+                const statusEl = document.querySelector(`[data-status-uid="${data.uid}"]`);
+                const dotEl = document.querySelector(`[data-uid="${data.uid}"] .status-dot`);
+                
+                if (statusEl) {
+                    const username = esc(user.username);
+                    if (data.is_online) {
+                        statusEl.innerHTML = `@${username} &bull; <span style="color:#10b981">Active now</span>`;
+                    } else {
+                        statusEl.innerHTML = `@${username} &bull; ${esc(formatLastActive(data.last_active))}`;
+                    }
+                }
+                if (dotEl) {
+                    dotEl.style.background = data.is_online ? '#10b981' : '#6b7280';
+                }
+            }
+        });
+
+        // ── Real-time profile photo update ──
+        socket.on('profile_updated', (data) => {
+            // Update in users list
+            const user = allUsers.find(u => u.uid === data.uid);
+            if (user) {
+                user.profile_photo = data.profile_photo;
+                renderUsers(allUsers);
+            }
+            // If it's me, update my own nav avatar too
+            if (data.uid === me.uid) {
+                me.profile_photo = data.profile_photo;
+                localStorage.setItem('chet_user', JSON.stringify(me));
+                initProfile();
+            }
+        });
+
+        // ── Real-time verification badge update ──
+        socket.on('user_verified', (data) => {
+            const user = allUsers.find(u => u.uid === data.uid);
+            if (user) {
+                user.is_verified = data.is_verified;
+                // Surgically update badge in card
+                const nameEl = document.querySelector(`[data-uid="${data.uid}"] .user-card-name`);
+                if (nameEl) {
+                    const existingBadge = nameEl.querySelector('.verified-badge');
+                    if (data.is_verified && !existingBadge) {
+                        const badge = document.createElement('span');
+                        badge.className = 'verified-badge';
+                        badge.innerHTML = `<svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="12" fill="#1d9bf0"/><path d="M9.5 16.5l-3-3 1.4-1.4 1.6 1.6 5.6-5.6 1.4 1.4z" fill="#fff"/></svg><span class="badge-tooltip">Verified Account</span>`;
+                        nameEl.appendChild(badge);
+                    } else if (!data.is_verified && existingBadge) {
+                        existingBadge.remove();
+                    }
+                }
+            }
+            if (data.uid === me.uid) {
+                me.is_verified = data.is_verified;
+                localStorage.setItem('chet_user', JSON.stringify(me));
+                initProfile(); // Refresh my profile badge
+            }
+        });
+
+        // ── Incoming Call on Home Page ──
+        // ── Incoming Call on Home Page ──
+        socket.on('incoming_call', (data) => {
+            sessionStorage.setItem('incomingCallToAnswer', JSON.stringify(data));
+            window.location.href = 'index.html';
+        });
+};
+
+loadUsers();
+</script>
+</body>
+</html>

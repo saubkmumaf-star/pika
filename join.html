@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta name="google-site-verification" content="59-lt8zZUYOM6qVl2YgOfNTazAAh8OQVYp5tF4VXz2w" />
+
+    <script src="config.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice App — Sign In or Create Account</title>
+    <meta name="description" content="Join Voice App and make secure voice calls with friends.">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        // Redirect if already logged in
+        try {
+            if (localStorage.getItem('chet_token') && localStorage.getItem('chet_user')) {
+                window.location.replace('index.html');
+            }
+        } catch(e) {}
+    </script>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg:       #090912;
+            --surface:  rgba(255,255,255,0.04);
+            --border:   rgba(255,255,255,0.08);
+            --text:     #f0f0ff;
+            --muted:    rgba(240,240,255,0.45);
+            --accent1:  #7c6cff;
+            --accent2:  #a855f7;
+            --accent3:  #06b6d4;
+            --error:    #ff5e7c;
+            --success:  #34d399;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        /* Ambient glow blobs */
+        body::before, body::after {
+            content: '';
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.18;
+            pointer-events: none;
+            z-index: 0;
+        }
+        body::before {
+            width: 600px; height: 600px;
+            background: var(--accent1);
+            top: -200px; left: -150px;
+            animation: drift1 12s ease-in-out infinite alternate;
+        }
+        body::after {
+            width: 500px; height: 500px;
+            background: var(--accent2);
+            bottom: -150px; right: -100px;
+            animation: drift2 10s ease-in-out infinite alternate;
+        }
+        @keyframes drift1 { to { transform: translate(60px, 80px); } }
+        @keyframes drift2 { to { transform: translate(-60px, -80px); } }
+
+        .card {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 440px;
+            background: rgba(255,255,255,0.04);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 40px 36px;
+            box-shadow: 0 32px 80px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08);
+            animation: slideUp 0.5s cubic-bezier(0.16,1,0.3,1);
+        }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 28px;
+            justify-content: center;
+        }
+        .logo-icon {
+            width: 42px; height: 42px;
+            background: linear-gradient(135deg, var(--accent1), var(--accent2));
+            border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px;
+        }
+        .logo-text { font-size: 24px; font-weight: 800; letter-spacing: -0.5px; }
+        .logo-text span { background: linear-gradient(90deg, var(--accent1), var(--accent3)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            background: rgba(0,0,0,0.3);
+            border-radius: 12px;
+            padding: 4px;
+            margin-bottom: 28px;
+            border: 1px solid var(--border);
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            background: transparent;
+            color: var(--muted);
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 600;
+            border-radius: 9px;
+            cursor: pointer;
+            transition: all 0.25s;
+        }
+        .tab-btn.active {
+            background: linear-gradient(135deg, var(--accent1), var(--accent2));
+            color: #fff;
+            box-shadow: 0 4px 16px rgba(124,108,255,0.35);
+        }
+
+        /* Forms */
+        .form { display: none; flex-direction: column; gap: 16px; }
+        .form.active { display: flex; animation: fadeIn 0.3s; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+        .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+        .field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .field label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+        }
+        .field input {
+            width: 100%;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 12px 14px;
+            color: var(--text);
+            font-family: inherit;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            -webkit-text-fill-color: var(--text);
+        }
+        .field input::placeholder { 
+            color: rgba(255,255,255,0.22);
+            -webkit-text-fill-color: rgba(255,255,255,0.22);
+            font-style: italic;
+        }
+        /* Override browser autofill styling */
+        .field input:-webkit-autofill,
+        .field input:-webkit-autofill:hover,
+        .field input:-webkit-autofill:focus {
+            -webkit-box-shadow: 0 0 0 1000px rgba(20,20,40,0.95) inset;
+            -webkit-text-fill-color: var(--text);
+            border-color: var(--accent1);
+            caret-color: var(--text);
+        }
+        .field input:focus {
+            border-color: var(--accent1);
+            box-shadow: 0 0 0 3px rgba(124,108,255,0.15);
+        }
+
+        .submit-btn {
+            margin-top: 4px;
+            padding: 14px;
+            border: none;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--accent1), var(--accent2));
+            color: #fff;
+            font-family: inherit;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+        .submit-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(124,108,255,0.4); }
+        .submit-btn:active { transform: translateY(0); }
+        .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        .submit-btn .spinner {
+            display: inline-block;
+            width: 16px; height: 16px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            vertical-align: middle;
+            margin-right: 8px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .msg {
+            padding: 12px 14px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 500;
+            display: none;
+        }
+        .msg.error  { background: rgba(255,94,124,0.12); border: 1px solid rgba(255,94,124,0.3); color: var(--error); display: block; }
+        .msg.success { background: rgba(52,211,153,0.1); border: 1px solid rgba(52,211,153,0.25); color: var(--success); display: block; }
+
+        .divider {
+            text-align: center;
+            color: var(--muted);
+            font-size: 12px;
+            margin: 4px 0;
+            position: relative;
+        }
+        .divider::before, .divider::after {
+            content: '';
+            position: absolute;
+            top: 50%; width: 40%;
+            height: 1px;
+            background: var(--border);
+        }
+        .divider::before { left: 0; }
+        .divider::after  { right: 0; }
+
+        @media (max-width: 480px) {
+            .card { padding: 28px 20px; }
+            .row  { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+<div class="card">
+    <div class="logo">
+        <div class="logo-icon">💬</div>
+        <div class="logo-text"><span>Voice App</span></div>
+    </div>
+
+    <div class="tabs">
+        <button class="tab-btn active" id="loginTab" onclick="switchTab('login')">Sign In</button>
+        <button class="tab-btn" id="registerTab" onclick="switchTab('register')">Create Account</button>
+    </div>
+
+    <!-- LOGIN -->
+    <form class="form active" id="loginForm" onsubmit="doLogin(event)">
+        <div id="loginMsg" class="msg"></div>
+        <div class="field">
+            <label>Email or Username</label>
+            <input type="text" id="loginIdentifier" placeholder="your@email.com or username" autocomplete="username" required>
+        </div>
+        <div class="field">
+            <label>Password</label>
+            <input type="password" id="loginPassword" placeholder="Enter your password" autocomplete="current-password" required>
+        </div>
+        <div class="field">
+            <label>Security Check</label>
+            <div style="display:flex; gap:12px; align-items:center;">
+                <img id="loginCaptchaImg" src="" alt="Loading..." style="height:45px; width:140px; border-radius:8px; cursor:pointer; background:rgba(255,255,255,0.05); object-fit:contain;" onclick="loadCaptcha('login')">
+                <input type="text" id="loginCaptchaInput" placeholder="Enter text" required autocomplete="off" style="flex:1; text-align:center; font-size:16px; font-weight:700; letter-spacing:2px; height:45px; margin:0;">
+            </div>
+            <div style="font-size:11px; color:var(--muted); text-align:right;">Click image to refresh</div>
+        </div>
+        <button type="submit" class="submit-btn" id="loginBtn">Sign In</button>
+        <div style="text-align:center; margin-top:16px;">
+            <a href="#" onclick="switchTab('forgot')" style="color:var(--accent1); font-size:13px; text-decoration:none; font-weight:600;">Forgot Password?</a>
+        </div>
+    </form>
+
+    <!-- REGISTER -->
+    <form class="form" id="registerForm" onsubmit="doRegister(event)" autocomplete="off">
+        <div id="registerMsg" class="msg"></div>
+        <div class="row">
+            <div class="field">
+                <label>First Name</label>
+                <input type="text" id="regFirstName" placeholder="Enter first name" autocomplete="given-name" required>
+            </div>
+            <div class="field">
+                <label>Last Name</label>
+                <input type="text" id="regLastName" placeholder="Enter last name" autocomplete="family-name" required>
+            </div>
+        </div>
+        <div class="field">
+            <label>Username</label>
+            <input type="text" id="regUsername" placeholder="e.g. john_doe (3–20 chars)" required pattern="[a-zA-Z0-9_]{3,20}" autocomplete="off">
+        </div>
+        <div class="field">
+            <label style="display: flex; justify-content: space-between; align-items: center;">
+                <span>Email</span>
+                <span id="domainBadge" style="display: none; background: #fff; border-radius: 6px; padding: 4px 6px; line-height: 1; align-items: center; gap: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/archive/c/c1/20211029193237%21Google_%22G%22_logo.svg" style="width:14px; height:14px;" id="domainIcon">
+                    <span id="domainText" style="color: #333; font-size: 11px; font-weight: 800; text-transform: uppercase;"></span>
+                </span>
+            </label>
+            <input type="email" id="regEmail" placeholder="your@email.com" required autocomplete="off">
+        </div>
+        <div class="field">
+            <label>Password</label>
+            <input type="password" id="regPassword" placeholder="Minimum 6 characters" required minlength="6" autocomplete="new-password">
+        </div>
+        <div class="field">
+            <label>Security Check</label>
+            <div style="display:flex; gap:12px; align-items:center;">
+                <img id="registerCaptchaImg" src="" alt="Loading..." style="height:45px; width:140px; border-radius:8px; cursor:pointer; background:rgba(255,255,255,0.05); object-fit:contain;" onclick="loadCaptcha('register')">
+                <input type="text" id="registerCaptchaInput" placeholder="Enter text" required autocomplete="off" style="flex:1; text-align:center; font-size:16px; font-weight:700; letter-spacing:2px; height:45px; margin:0;">
+            </div>
+            <div style="font-size:11px; color:var(--muted); text-align:right;">Click image to refresh</div>
+        </div>
+        <button type="submit" class="submit-btn" id="registerBtn">Create Account</button>
+    </form>
+
+    <!-- OTP VERIFICATION -->
+    <form class="form" id="otpForm" onsubmit="doVerifyOtp(event)" autocomplete="off">
+        <div id="otpMsg" class="msg" style="display:block; background:rgba(124,108,255,0.1); border:1px solid var(--accent1); color:var(--accent1); margin-bottom:12px;">We sent a 6-digit verification code to your email.</div>
+        <div class="field">
+            <label>Verification Code</label>
+            <input type="text" id="otpCode" placeholder="Enter 6-digit code" required pattern="[0-9]{6}" maxlength="6" autocomplete="off" style="text-align:center; font-size:20px; letter-spacing:4px;">
+        </div>
+        <button type="submit" class="submit-btn" id="otpBtn">Verify & Login</button>
+        <div style="text-align:center; margin-top:12px;"><a href="#" onclick="switchTab('register')" style="color:var(--muted); font-size:12px; text-decoration:none;">&larr; Back to Register</a></div>
+    </form>
+    </form>
+    
+    <!-- FORGOT PASSWORD FLOW -->
+    <form class="form" id="forgotForm" onsubmit="doForgot(event)">
+        <div style="text-align:center; margin-bottom: 20px;">
+            <h2 style="margin:0; font-size:24px; color:#fff;">Reset Password</h2>
+            <p style="margin:8px 0 0; font-size:14px; color:var(--muted);">Enter your email to receive an OTP.</p>
+        </div>
+        <div id="forgotMsg" class="msg"></div>
+        <div class="field">
+            <label>Email Address</label>
+            <input type="email" id="forgotEmail" placeholder="your@email.com" required autocomplete="off">
+        </div>
+        <button type="submit" class="submit-btn" id="forgotBtn">Send Reset Code</button>
+        <div style="text-align:center; margin-top:12px;"><a href="#" onclick="switchTab('login')" style="color:var(--muted); font-size:12px; text-decoration:none;">&larr; Back to Login</a></div>
+    </form>
+
+    <form class="form" id="resetOtpForm" onsubmit="doVerifyResetOtp(event)">
+        <div style="text-align:center; margin-bottom: 20px;">
+            <h2 style="margin:0; font-size:24px; color:#fff;">Verify OTP</h2>
+            <p style="margin:8px 0 0; font-size:14px; color:var(--muted);">Enter the 6-digit code sent to your email.</p>
+        </div>
+        <div id="resetOtpMsg" class="msg"></div>
+        <div class="field">
+            <label>Verification Code</label>
+            <input type="text" id="resetOtpCode" placeholder="Enter 6-digit code" required pattern="[0-9]{6}" maxlength="6" autocomplete="off" style="text-align:center; font-size:20px; letter-spacing:4px;">
+        </div>
+        <button type="submit" class="submit-btn" id="resetOtpBtn">Verify Code</button>
+        <div style="text-align:center; margin-top:12px;"><a href="#" onclick="switchTab('forgot')" style="color:var(--muted); font-size:12px; text-decoration:none;">&larr; Resend Code</a></div>
+    </form>
+
+    <form class="form" id="newPasswordForm" onsubmit="doResetPassword(event)">
+        <div style="text-align:center; margin-bottom: 20px;">
+            <h2 style="margin:0; font-size:24px; color:#fff;">New Password</h2>
+            <p style="margin:8px 0 0; font-size:14px; color:var(--muted);">Choose a new strong password.</p>
+        </div>
+        <div id="newPasswordMsg" class="msg"></div>
+        <div class="field">
+            <label>New Password</label>
+            <input type="password" id="newPass" placeholder="Minimum 6 characters" required minlength="6" autocomplete="new-password">
+        </div>
+        <button type="submit" class="submit-btn" id="newPasswordBtn">Update Password</button>
+    </form>
+</div>
+
+<!-- CUSTOM SUCCESS MODAL -->
+<div id="successModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:9999; justify-content:center; align-items:center; backdrop-filter:blur(8px);">
+    <div style="background:#1e1e24; border:1px solid rgba(255,255,255,0.1); border-radius:16px; padding:30px; text-align:center; max-width:320px; width:100%; box-shadow:0 16px 40px rgba(0,0,0,0.5); animation:slideUp 0.3s cubic-bezier(0.16,1,0.3,1);">
+        <div style="width:64px; height:64px; background:rgba(124,108,255,0.1); border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 20px;">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#7c6cff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+            </svg>
+        </div>
+        <h3 style="margin:0 0 10px; color:#fff; font-size:20px;">Success!</h3>
+        <p style="margin:0 0 24px; color:var(--muted); font-size:14px; line-height:1.5;">Password updated successfully.<br>Click OK to enter your account.</p>
+        <button id="modalOkBtn" style="background:linear-gradient(135deg, var(--accent1), var(--accent2)); color:#fff; border:none; padding:12px 24px; border-radius:12px; font-weight:700; cursor:pointer; width:100%; font-size:15px; transition:transform 0.2s;">OK</button>
+    </div>
+</div>
+
+<script>
+const API = (window.APP_CONFIG && window.APP_CONFIG.SIGNALING_URL) || window.location.origin;
+const CAPTCHA_API = API + '/api/captcha';
+let currentCaptchaId = '';
+
+async function loadCaptcha(type) {
+    try {
+        const r = await fetch(`${CAPTCHA_API}/init`);
+        const data = await r.json();
+        currentCaptchaId = data.id;
+        document.getElementById(type + 'CaptchaImg').src = `${CAPTCHA_API}/render/${data.id}`;
+        document.getElementById(type + 'CaptchaInput').value = '';
+    } catch(e) {
+        console.error('Captcha load failed', e);
+    }
+}
+
+// Fetch domain rules on load to display in UI
+fetch(`${API}/api/auth/domain-rules`)
+    .then(r => r.json())
+    .then(data => {
+        if (data.hasAllowRules && data.allowedDomains.length > 0) {
+            const badge = document.getElementById('domainBadge');
+            const text = document.getElementById('domainText');
+            if (badge && text) {
+                badge.style.display = 'flex';
+                const primaryDomain = data.allowedDomains[0];
+                text.textContent = primaryDomain.toUpperCase();
+                if (!primaryDomain.includes('gmail')) {
+                    const icon = document.getElementById('domainIcon');
+                    if(icon) icon.style.display = 'none'; // hide G logo if not gmail
+                }
+            }
+        }
+    })
+    .catch(e => console.warn('Failed to fetch domain rules', e));
+
+// Load login captcha on initial page load
+loadCaptcha('login');
+
+function switchTab(tab) {
+    document.getElementById('loginForm').classList.toggle('active', tab === 'login');
+    document.getElementById('registerForm').classList.toggle('active', tab === 'register');
+    document.getElementById('otpForm').classList.toggle('active', tab === 'otp');
+    document.getElementById('forgotForm').classList.toggle('active', tab === 'forgot');
+    document.getElementById('resetOtpForm').classList.toggle('active', tab === 'resetOtp');
+    document.getElementById('newPasswordForm').classList.toggle('active', tab === 'newPassword');
+    
+    // Manage top tabs visibility (hide during OTP/Forgot flows)
+    const showTabs = (tab === 'login' || tab === 'register');
+    document.querySelector('.tabs').style.display = showTabs ? 'flex' : 'none';
+    if(showTabs) {
+        document.getElementById('loginTab').classList.toggle('active', tab === 'login');
+        document.getElementById('registerTab').classList.toggle('active', tab === 'register');
+    }
+
+    if (tab === 'login') { document.getElementById('loginIdentifier').focus(); }
+    if (tab === 'register') { document.getElementById('regFirstName').focus(); }
+    if (tab === 'otp') { document.getElementById('otpCode').focus(); }
+    if (tab === 'forgot') { document.getElementById('forgotEmail').focus(); }
+    if (tab === 'resetOtp') { document.getElementById('resetOtpCode').focus(); }
+    if (tab === 'newPassword') { document.getElementById('newPass').focus(); }
+
+    if (tab === 'login') { loadCaptcha('login'); }
+    if (tab === 'register') { loadCaptcha('register'); }
+
+    document.getElementById('loginMsg').className = 'msg';
+    document.getElementById('registerMsg').className = 'msg';
+    document.getElementById('otpMsg').className = 'msg';
+    document.getElementById('forgotMsg').className = 'msg';
+    document.getElementById('resetOtpMsg').className = 'msg';
+    document.getElementById('newPasswordMsg').className = 'msg';
+}
+
+function setMsg(id, text, type) {
+    const el = document.getElementById(id);
+    el.textContent = text;
+    el.className = 'msg ' + type;
+}
+
+function setLoading(btnId, loading) {
+    const btn = document.getElementById(btnId);
+    if (loading) {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner"></span> Please wait...';
+    } else {
+        btn.disabled = false;
+        btn.innerHTML = btn.id === 'loginBtn' ? 'Sign In' : 'Create Account';
+    }
+}
+
+function saveAndRedirect(data) {
+    localStorage.setItem('chet_token', data.token);
+    localStorage.setItem('chet_user', JSON.stringify({
+        uid: data.uid,
+        username: data.username,
+        first_name: data.first_name,
+        last_name: data.last_name,
+        profile_photo: data.profile_photo,
+        is_verified: data.is_verified
+    }));
+    window.location.replace('index.html');
+}
+
+async function doLogin(e) {
+    e.preventDefault();
+    const identifier = document.getElementById('loginIdentifier').value.trim();
+    const password   = document.getElementById('loginPassword').value;
+    if (!identifier || !password) { setMsg('loginMsg', 'Please fill all fields.', 'error'); return; }
+    
+    const captcha_answer = document.getElementById('loginCaptchaInput').value.trim();
+    if (!captcha_answer) { setMsg('loginMsg', 'Please solve the CAPTCHA.', 'error'); return; }
+
+    setLoading('loginBtn', true);
+    try {
+        const r = await fetch(`${API}/api/auth/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ identifier, password, captcha_id: currentCaptchaId, captcha_answer })
+        });
+        const data = await r.json();
+        if (!r.ok) { 
+            setMsg('loginMsg', data.error || 'Login failed.', 'error'); 
+            if(data.error && data.error.toLowerCase().includes('captcha')) loadCaptcha('login');
+            return; 
+        }
+        saveAndRedirect(data);
+    } catch(err) {
+        console.error('[LOGIN] fetch error:', err);
+        setMsg('loginMsg', 'Server unreachable. Make sure backend is deployed and running.', 'error');
+    } finally {
+        setLoading('loginBtn', false);
+    }
+}
+
+async function doRegister(e) {
+    e.preventDefault();
+    const first_name = document.getElementById('regFirstName').value.trim();
+    const last_name  = document.getElementById('regLastName').value.trim();
+    const username   = document.getElementById('regUsername').value.trim();
+    const email      = document.getElementById('regEmail').value.trim();
+    const password   = document.getElementById('regPassword').value;
+    if (!first_name || !last_name || !username || !email || !password) {
+        setMsg('registerMsg', 'Please fill all fields.', 'error'); return;
+    }
+
+    const captcha_answer = document.getElementById('registerCaptchaInput').value.trim();
+    if (!captcha_answer) { setMsg('registerMsg', 'Please solve the CAPTCHA.', 'error'); return; }
+
+    setLoading('registerBtn', true);
+    try {
+        const r = await fetch(`${API}/api/auth/register`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ first_name, last_name, username, email, password, captcha_id: currentCaptchaId, captcha_answer })
+        });
+        const data = await r.json();
+        if (!r.ok) { 
+            setMsg('registerMsg', data.error || 'Registration failed.', 'error'); 
+            if(data.error && data.error.toLowerCase().includes('captcha')) loadCaptcha('register');
+            return; 
+        }
+        
+        if (data.requireOtp) {
+            switchTab('otp');
+            document.getElementById('otpCode').focus();
+        } else {
+            saveAndRedirect(data);
+        }
+    } catch(err) {
+        console.error('[REGISTER] fetch error:', err);
+        setMsg('registerMsg', 'Server unreachable. Make sure backend is deployed and running.', 'error');
+    } finally {
+        setLoading('registerBtn', false);
+    }
+}
+
+async function doVerifyOtp(e) {
+    e.preventDefault();
+    const email = document.getElementById('regEmail').value.trim();
+    const otp = document.getElementById('otpCode').value.trim();
+    if (!email || !otp) return;
+    
+    setLoading('otpBtn', true);
+    try {
+        const r = await fetch(`${API}/api/auth/verify-otp`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, otp })
+        });
+        const data = await r.json();
+        if (!r.ok) { setMsg('otpMsg', data.error || 'Verification failed.', 'error'); return; }
+        saveAndRedirect(data);
+    } catch(err) {
+        console.error('[OTP] fetch error:', err);
+        setMsg('otpMsg', 'Server unreachable. Please try again.', 'error');
+    } finally {
+        setLoading('otpBtn', false);
+    }
+}
+
+// --- FORGOT PASSWORD ---
+let resetEmail = '';
+let resetToken = '';
+
+async function doForgot(e) {
+    e.preventDefault();
+    const email = document.getElementById('forgotEmail').value.trim();
+    if (!email) return;
+    
+    setLoading('forgotBtn', true);
+    setMsg('forgotMsg', '', '');
+    
+    try {
+        const r = await fetch(`${API}/api/auth/forgot-password`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email })
+        });
+        const data = await r.json();
+        if (!r.ok) { setMsg('forgotMsg', data.error || 'Request failed.', 'error'); return; }
+        
+        resetEmail = email;
+        setMsg('resetOtpMsg', data.message || 'Check your email for the OTP.', 'success');
+        switchTab('resetOtp');
+    } catch(err) {
+        setMsg('forgotMsg', 'Server unreachable.', 'error');
+    } finally {
+        setLoading('forgotBtn', false);
+    }
+}
+
+async function doVerifyResetOtp(e) {
+    e.preventDefault();
+    const otp = document.getElementById('resetOtpCode').value.trim();
+    if (!otp) return;
+    
+    setLoading('resetOtpBtn', true);
+    setMsg('resetOtpMsg', '', '');
+    
+    try {
+        const r = await fetch(`${API}/api/auth/verify-reset-otp`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: resetEmail, otp })
+        });
+        const data = await r.json();
+        if (!r.ok) { setMsg('resetOtpMsg', data.error || 'Verification failed.', 'error'); return; }
+        
+        resetToken = data.resetToken;
+        switchTab('newPassword');
+    } catch(err) {
+        setMsg('resetOtpMsg', 'Server unreachable.', 'error');
+    } finally {
+        setLoading('resetOtpBtn', false);
+    }
+}
+
+async function doResetPassword(e) {
+    e.preventDefault();
+    const newPassword = document.getElementById('newPass').value;
+    if (!newPassword || newPassword.length < 6) return;
+    
+    setLoading('newPasswordBtn', true);
+    setMsg('newPasswordMsg', '', '');
+    
+    try {
+        const r = await fetch(`${API}/api/auth/reset-password`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ resetToken, newPassword })
+        });
+        const data = await r.json();
+        if (!r.ok) { setMsg('newPasswordMsg', data.error || 'Failed to update.', 'error'); return; }
+        
+        // Show success modal instead of alert
+        const modal = document.getElementById('successModal');
+        const okBtn = document.getElementById('modalOkBtn');
+        modal.style.display = 'flex';
+        
+        okBtn.onclick = async () => {
+            okBtn.innerHTML = 'Logging in...';
+            okBtn.disabled = true;
+            try {
+                // Auto login
+                const loginRes = await fetch(`${API}/api/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ identifier: resetEmail, password: newPassword })
+                });
+                const loginData = await loginRes.json();
+                if (loginRes.ok) {
+                    saveAndRedirect(loginData);
+                } else {
+                    switchTab('login');
+                    modal.style.display = 'none';
+                    setMsg('loginMsg', 'Auto-login failed. Please sign in.', 'error');
+                }
+            } catch(e) {
+                switchTab('login');
+                modal.style.display = 'none';
+            }
+        };
+
+    } catch(err) {
+        setMsg('newPasswordMsg', 'Server unreachable.', 'error');
+    } finally {
+        setLoading('newPasswordBtn', false);
+    }
+}
+</script>
+</body>
+</html>
